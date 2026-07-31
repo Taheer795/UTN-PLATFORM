@@ -1,0 +1,187 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin() { 
+      return isSignedIn() 
+        && (
+          request.auth.uid == "tMt2S6V1kZgV0y8trHqL1UyvvmJ3"
+          || (
+            'email' in request.auth.token 
+            && (request.auth.token.email.lower() == "itztahirismail@gmail.com" || request.auth.token.email == "itztahirismail@gmail.com")
+          )
+        ); 
+    }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // --- Validation Helpers ---
+    function isValidUser(data) {
+      return (!('uid' in data) || data.uid == request.auth.uid);
+    }
+
+    function isValidListing(data) {
+      return data.get('title', '') is string && data.get('title', '').size() <= 100
+        && (data.get('price', 0) is int || data.get('price', 0) is float) && data.get('price', 0) >= 0
+        && data.get('siloType', '') in ['wardrobe', 'garage', 'jersey']
+        && data.get('sellerId', '') == request.auth.uid
+        && (data.get('status', '') == 'published' || data.get('status', '') == 'draft' || data.get('status', '') == 'sold');
+    }
+
+    function isValidNotification(data) {
+      return data.get('userId', '') == request.auth.uid
+        && data.get('title', '') is string
+        && data.get('message', '') is string
+        && data.get('status', '') in ['unread', 'read']
+        && data.get('type', '') in ['info', 'success', 'error'];
+    }
+
+    function isValidDraft(data) {
+      return data.get('userId', '') == request.auth.uid;
+    }
+
+    function isValidGarageScan(data) {
+      return (data.get('vin', '') is string && data.get('vin', '').size() >= 11)
+        && (data.get('specs', {}) is map)
+        && (data.get('timestamp', null) != null)
+        && (data.get('userId', '') == request.auth.uid || !('userId' in data));
+    }
+
+    function isValidRequest(data) {
+      return (data.get('orderId', '') is string)
+        && (data.get('listingId', '') is string)
+        && (data.get('userId', '') == request.auth.uid)
+        && (data.get('status', '') in ['pending', 'paid', 'payment_submitted', 'processing', 'completed', 'cancelled', 'bid_placed', 'callback_request'])
+        && (data.get('price', 0) is int || data.get('price', 0) is float)
+        && (data.get('title', '') is string)
+        && (data.get('orderDate', '') is string)
+        && (data.get('estimatedDeliveryDate', '') is string || !('estimatedDeliveryDate' in data))
+        && (data.get('customDeliveryDays', 0) is int || !('customDeliveryDays' in data));
+    }
+
+    function isFrozen(userId) {
+      return exists(/databases/$(database)/documents/bidding_restrictions/$(userId)) 
+        && get(/databases/$(database)/documents/bidding_restrictions/$(userId)).data.get('restricted', false) == true;
+    }
+
+    function isValidAuction(data) {
+      return data.get('title', '') is string && data.get('title', '').size() <= 100
+        && data.get('make', '') is string && data.get('make', '').size() <= 50
+        && data.get('model', '') is string && data.get('model', '').size() <= 50
+        && (data.get('startPrice', 0) is int || data.get('startPrice', 0) is float) && data.get('startPrice', 0) >= 0
+        && (data.get('currentBid', 0) is int || data.get('currentBid', 0) is float) && data.get('currentBid', 0) >= 0
+        && data.get('status', '') in ['active', 'ended', 'paid', 'unpaid', 'awarded_runner_up'];
+    }
+
+    function isValidBid(data) {
+      return (data.get('amount', 0) is int || data.get('amount', 0) is float) && data.get('amount', 0) > 0
+        && data.get('bidderId', '') == request.auth.uid;
+    }
+
+    function isValidBiddingRestriction(data) {
+      return data.get('restricted', false) is bool;
+    }
+
+    // --- Rules ---
+
+    match /notifications/{notificationId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidNotification(incoming());
+      allow update: if isSignedIn() && isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['status']);
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+
+    match /drafts/{userId} {
+      allow get, list: if isSignedIn() && isOwner(userId);
+      allow create, update: if isSignedIn() && isOwner(userId) && isValidDraft(incoming());
+      allow delete: if isSignedIn() && isOwner(userId);
+    }
+
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) 
+        && (!('uid' in incoming()) || incoming().uid == request.auth.uid)
+        && (incoming().diff(existing()).affectedKeys().hasOnly([
+          'uid', 'displayName', 'photoURL', 'email', 'createdAt', 'lastActiveAt',
+          'firstName', 'surname', 'phone', 'dob', 'gender', 'language', 'theme', 'updatedAt', 'role'
+        ]));
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    match /listings/{listingId} {
+      allow get: if resource.data.status == 'published' || ('sellerId' in resource.data && isOwner(resource.data.sellerId)) || isAdmin();
+      allow list: if true;
+      allow create: if isSignedIn() && isValidListing(incoming()) && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && (
+        isAdmin() || (
+          'sellerId' in existing() && isOwner(existing().sellerId) 
+          && isValidListing(incoming())
+          && (incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'price', 'images', 'media', 'apparelDetails', 'autoDetails', 'jerseyDetails', 'sewingDetails', 'accessoryDetails', 'footwearDetails', 'tags', 'status', 'updatedAt']))
+        )
+      );
+      allow delete: if true;
+    }
+
+    match /requests/{requestId} {
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow get: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
+      
+      allow create: if isSignedIn() && isValidRequest(incoming()) && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && (
+        isAdmin() || (
+          isOwner(existing().userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['status'])
+          && (incoming().status in ['pending', 'paid', 'payment_submitted', 'processing', 'completed', 'cancelled', 'bid_placed', 'callback_request'])
+        )
+      );
+      allow delete: if isSignedIn() && (isOwner(existing().userId) || isAdmin());
+    }
+
+    match /garage_scans/{scanId} {
+      allow list, get: if true;
+      allow create: if isSignedIn() && isValidGarageScan(incoming());
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    match /auctions/{auctionId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && isValidAuction(incoming());
+      allow update: if isSignedIn() && (
+        isAdmin() || (
+          !isFrozen(request.auth.uid)
+          && isValidAuction(incoming())
+          && (incoming().currentBid > existing().currentBid)
+          && incoming().highestBidderId == request.auth.uid
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /auctions/{auctionId}/bids/{bidId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && !isFrozen(request.auth.uid) && isValidBid(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    match /bidding_restrictions/{userId} {
+      allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow create, update: if isAdmin() || (isSignedIn() && isOwner(userId) && isValidBiddingRestriction(incoming()));
+      allow delete: if isAdmin() || (isSignedIn() && isOwner(userId));
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Jersey Studio Hub",
+  "description": "Professional 3D Jersey Customization Engine, Luxury Wardrobe Inventory, and Automotive Garage Hub with VIN Decoding.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

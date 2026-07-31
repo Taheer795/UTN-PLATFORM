@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  role          String    @default("BUYER") // ADMIN, SELLER, BUYER
+  listings      Listing[] @relation("SellerListings")
+  orders        Order[]   @relation("BuyerOrders")
+  messagesSent  Message[] @relation("SentMessages")
+  messagesRecv  Message[] @relation("ReceivedMessages")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique // e.g., "APPAREL", "AUTOMOBILE"
+  description String?
+  listings    Listing[]
+}
+
+model Listing {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  price       Float
+  status      String   @default("ACTIVE") // ACTIVE, SOLD, DRAFT
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  sellerId    String
+  seller      User     @relation("SellerListings", fields: [sellerId], references: [id])
+  images      Image[]
+  
+  // Dynamic relations based on category
+  apparelDetails ApparelDetails?
+  autoDetails    AutoDetails?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Order       Order[]
+}
+
+model Image {
+  id        String  @id @default(uuid())
+  url       String
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id])
+}
+
+model ApparelDetails {
+  id             String  @id @default(uuid())
+  listingId      String  @unique
+  listing        Listing @relation(fields: [listingId], references: [id])
+  gender         String  // MALE, FEMALE, UNISEX
+  size           String
+  brand          String
+  condition      String
+  material       String?
+  shippingWeight Float?
+}
+
+model AutoDetails {
+  id             String  @id @default(uuid())
+  listingId      String  @unique
+  listing        Listing @relation(fields: [listingId], references: [id])
+  vin            String  @unique
+  make           String
+  model          String
+  year           Int
+  mileage        Int
+  transmission   String
+  fuelType       String
+  titleStatus    String
+  serviceHistory String?
+  verified       Boolean @default(false)
+}
+
+model Order {
+  id        String   @id @default(uuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  buyerId   String
+  buyer     User     @relation("BuyerOrders", fields: [buyerId], references: [id])
+  amount    Float
+  status    String   @default("PENDING") // PENDING, PAID, SHIPPED, COMPLETED
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  content    String
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  listingId  String?
+  createdAt  DateTime @default(now())
+}
