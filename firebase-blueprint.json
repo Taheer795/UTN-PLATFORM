@@ -1,0 +1,231 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "lastActiveAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "Listing": {
+      "title": "Listing",
+      "description": "Product listing (Apparel, Automobile, Jersey, etc).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "siloType": { "type": "string", "enum": ["wardrobe", "garage", "jersey"] },
+        "images": { 
+          "type": "array",
+          "items": { 
+            "type": "object", 
+            "properties": { 
+              "url": { "type": "string" },
+              "type": { "type": "string", "enum": ["image", "video"] },
+              "thumbnailUrl": { "type": "string" }
+            } 
+          }
+        },
+        "media": { "$ref": "#/entities/Listing/properties/images" },
+        "apparelDetails": { "$ref": "#/entities/ApparelDetails" },
+        "autoDetails": { "$ref": "#/entities/AutoDetails" },
+        "sellerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["published", "draft", "sold", "archived"] }
+      },
+      "required": ["title", "price", "siloType", "sellerId", "createdAt"]
+    },
+    "ApparelDetails": {
+      "title": "ApparelDetails",
+      "type": "object",
+      "properties": {
+        "brand": { "type": "string" },
+        "size": { "type": "string" },
+        "condition": { "type": "string" },
+        "gender": { "type": "string" },
+        "material": { "type": "string" }
+      }
+    },
+    "AutoDetails": {
+      "title": "AutoDetails",
+      "type": "object",
+      "properties": {
+        "year": { "type": "number" },
+        "make": { "type": "string" },
+        "model": { "type": "string" },
+        "mileage": { "type": "number" },
+        "transmission": { "type": "string" },
+        "fuelType": { "type": "string" },
+        "vin": { "type": "string" }
+      }
+    },
+    "Request": {
+      "title": "Request",
+      "description": "A purchase request or inspection booking.",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string" },
+        "listingId": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "price": { "type": "number" },
+        "siloType": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "paid"] },
+        "customization": { "type": "object" },
+        "orderDate": { "type": "string", "format": "date-time" },
+        "deliveryDetails": {
+          "type": "object",
+          "properties": {
+            "fullName": { "type": "string" },
+            "email": { "type": "string" },
+            "phone": { "type": "string" },
+            "state": { "type": "string" },
+            "address": { "type": "string" }
+          }
+        },
+        "estimatedDeliveryDate": { "type": "string", "format": "date-time" },
+        "customDeliveryDays": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["orderId", "listingId", "userId", "status", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["unread", "read"] },
+        "type": { "type": "string", "enum": ["info", "success", "error"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Draft": {
+      "title": "Draft",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "formData": { "type": "object" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "GarageScan": {
+      "title": "GarageScan",
+      "description": "A vehicle record retrieved via VIN decoding.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "vin": { "type": "string" },
+        "specs": { "type": "object" },
+        "userId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["vin", "specs", "timestamp"]
+    },
+    "Auction": {
+      "title": "Auction",
+      "description": "Active liquidation distressed commercial vehicle.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "make": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "number" },
+        "vin": { "type": "string" },
+        "mileage": { "type": "number" },
+        "startPrice": { "type": "number" },
+        "currentBid": { "type": "number" },
+        "highestBidderId": { "type": "string" },
+        "highestBidderName": { "type": "string" },
+        "highestBidderEmail": { "type": "string" },
+        "highestBidderPhone": { "type": "string" },
+        "secondHighestBidderId": { "type": "string" },
+        "secondHighestBidderName": { "type": "string" },
+        "secondHighestBidderEmail": { "type": "string" },
+        "secondHighestBidderPhone": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "ended", "paid", "unpaid", "awarded_runner_up"] },
+        "winnerDefaulted": { "type": "boolean" }
+      },
+      "required": ["title", "make", "model", "startPrice", "currentBid", "startTime", "endTime", "status"]
+    },
+    "Bid": {
+      "title": "Bid",
+      "description": "A specific bid update event.",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "bidderId": { "type": "string" },
+        "bidderName": { "type": "string" },
+        "bidderEmail": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "BiddingRestriction": {
+      "title": "BiddingRestriction",
+      "description": "Metadata for frozen or defaulted users.",
+      "type": "object",
+      "properties": {
+        "restricted": { "type": "boolean" },
+        "reason": { "type": "string" },
+        "frozenAt": { "type": "string" },
+        "auctionId": { "type": "string" },
+        "defaultedBidAmount": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles."
+    },
+    "listings/{listingId}": {
+      "schema": "Listing",
+      "description": "Available products."
+    },
+    "requests/{requestId}": {
+      "schema": "Request",
+      "description": "Cart items and orders."
+    },
+    "notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User notifications."
+    },
+    "drafts/{userId}": {
+      "schema": "Draft",
+      "description": "In-progress uploads for cross-device sync."
+    },
+    "garage_scans/{scanId}": {
+      "schema": "GarageScan",
+      "description": "Verified vehicle technical profiles."
+    },
+    "auctions/{auctionId}": {
+      "schema": "Auction",
+      "description": "Active liquidation distressed commercial vehicle."
+    },
+    "auctions/{auctionId}/bids/{bidId}": {
+      "schema": "Bid",
+      "description": "Bidding history audit trail."
+    },
+    "bidding_restrictions/{userId}": {
+      "schema": "BiddingRestriction",
+      "description": "Bidding freeze/restrictions for defaulted users."
+    }
+  }
+}
