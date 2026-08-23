@@ -1044,7 +1044,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans w-full max-w-full overflow-x-hidden">
       <SplashScreen isLoading={showSplash} />
       <Navigation 
         currentView={currentView} 
@@ -1431,7 +1431,7 @@ export default function App() {
                         </div>
 
                         {/* Category Filter Pills */}
-                        <div className="smooth-scroll-x py-2 -mx-6 px-6 md:mx-0 md:px-0 gap-3 border-b border-slate-100 flex overflow-x-auto">
+                        <div className="smooth-scroll-x py-2 gap-3 border-b border-slate-100 flex overflow-x-auto w-full max-w-full">
                           {[
                             { id: 'all', label: 'All Essentials' },
                             { id: CategoryType.FABRICS, label: 'Fabrics' },

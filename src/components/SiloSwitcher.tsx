@@ -29,7 +29,7 @@ export default function SiloSwitcher({
     <div className="w-full space-y-4">
       <div className="flex flex-col md:flex-col gap-2 md:gap-3 w-full">
         {/* Mobile Scrolling/Desktop Sidebar for Silos */}
-        <div className="flex overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none gap-2 md:block md:space-y-3 md:p-0 md:mx-0 md:overflow-visible">
+        <div className="flex overflow-x-auto pb-2 scrollbar-none gap-2 md:block md:space-y-3 md:p-0 md:overflow-visible w-full max-w-full">
           {silos.map((silo) => (
             <button
               key={silo.id}
