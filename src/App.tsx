@@ -1108,6 +1108,17 @@ export default function App() {
         isAdmin={isAdminUser}
         onOpenPostingModal={() => setIsDialogOpen(true)}
         cartCount={cart.length}
+        searchQuery={activeSilo === 'wardrobe' ? wardrobeSearchQuery : activeSilo === 'garage' ? garageSearchQuery : ''}
+        onSearchQueryChange={(query) => {
+          if (activeSilo === 'wardrobe') {
+            setWardrobeSearchQuery(query);
+          } else if (activeSilo === 'garage') {
+            setGarageSearchQuery(query);
+          }
+          if (currentView !== 'store') {
+            setCurrentView('store');
+          }
+        }}
       />
 
       <AnimatePresence>
@@ -1348,8 +1359,10 @@ export default function App() {
                     </Dialog>
                   </div>
                 )}
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+                {/* Store Silo Header: Title & View Layout Switcher */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
                   <div className="space-y-4">
+                    {/* Mobile Only: Silo Mode Switcher */}
                     <div className="md:hidden space-y-4 bg-slate-50/50 p-4 rounded-3xl border border-slate-100">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Select Studio Mode</h3>
@@ -1381,111 +1394,117 @@ export default function App() {
                               </button>
                             }
                           />
-                        <DialogContent className="max-w-[90vw] rounded-3xl p-6 bg-white border-none overflow-y-auto max-h-[80vh]">
-                          <SidebarContent 
-                            activeSilo={activeSilo}
-                            onSiloChange={(s) => { 
-                              if (s === 'bidding') {
-                                setCurrentView('bidding');
-                              } else {
-                                setActiveSilo(s);
-                                setCurrentView('store');
-                              }
-                              setIsSidebarOpen(false); 
-                            }}
-                            activeCategory={activeCategory}
-                            onCategoryChange={(c) => { setActiveCategory(c); setIsSidebarOpen(false); }}
-                            activeFilter={activeFilter}
-                            onFilterChange={(f) => { setActiveFilter(f); setIsSidebarOpen(false); }}
-                            isDialogOpen={isDialogOpen}
-                            setIsDialogOpen={setIsDialogOpen}
-                            handleAddAsset={handleAddAsset}
-                            currentView={currentView}
-                            initialData={listingFormInitialData}
-                            onOpenChange={(open) => {
-                              if (!open) setListingFormInitialData(null);
-                            }}
-                            isAdmin={isAdminUser}
-                            userRole={userRole}
-                          />
-                        </DialogContent>
-                      </Dialog>
+                          <DialogContent className="max-w-[90vw] rounded-3xl p-6 bg-white border-none overflow-y-auto max-h-[80vh]">
+                            <SidebarContent 
+                              activeSilo={activeSilo}
+                              onSiloChange={(s) => { 
+                                if (s === 'bidding') {
+                                  setCurrentView('bidding');
+                                } else {
+                                  setActiveSilo(s);
+                                  setCurrentView('store');
+                                }
+                                setIsSidebarOpen(false); 
+                              }}
+                              activeCategory={activeCategory}
+                              onCategoryChange={(c) => { setActiveCategory(c); setIsSidebarOpen(false); }}
+                              activeFilter={activeFilter}
+                              onFilterChange={(f) => { setActiveFilter(f); setIsSidebarOpen(false); }}
+                              isDialogOpen={isDialogOpen}
+                              setIsDialogOpen={setIsDialogOpen}
+                              handleAddAsset={handleAddAsset}
+                              currentView={currentView}
+                              initialData={listingFormInitialData}
+                              onOpenChange={(open) => {
+                                if (!open) setListingFormInitialData(null);
+                              }}
+                              isAdmin={isAdminUser}
+                              userRole={userRole}
+                            />
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
+
+                    {/* Store Title and Live Node Indicator */}
+                    <div className="space-y-2">
+                      <h1 className="text-4xl md:text-5xl font-light text-slate-900 leading-tight italic tracking-tight font-sans">
+                        {activeSilo === 'wardrobe' ? (activeCategory === 'all' ? "Uncle Tee's Wardrobe" : activeCategory.charAt(0) + activeCategory.slice(1).toLowerCase().replace('_', ' ')) : activeSilo === 'garage' ? "Welcome to Uncle Tee Automobiles" : "Uncle Tee's Pitch"}
+                      </h1>
+                      {activeSilo === 'garage' && (
+                        <p className="text-indigo-600 text-xs md:text-sm font-black uppercase tracking-[0.3em] italic">"The future begins here"</p>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                        <p className="text-slate-500 text-[10px] uppercase font-black tracking-[0.2em]">
+                          { (activeSilo === 'wardrobe' ? apparelList : activeSilo === 'garage' ? autoList : jerseyList).length > 0 
+                            ? `${activeCategory === 'all' ? 'All' : activeCategory} Inventory • ${activeSilo.toUpperCase()} NODE`
+                            : "Awaiting Inventory Upload • System Ready"
+                          }
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <h1 className="text-4xl md:text-5xl font-light text-slate-900 leading-tight italic tracking-tight font-sans">
-                      {activeSilo === 'wardrobe' ? (activeCategory === 'all' ? "Uncle Tee's Wardrobe" : activeCategory.charAt(0) + activeCategory.slice(1).toLowerCase().replace('_', ' ')) : activeSilo === 'garage' ? "Welcome to Uncle Tee Automobiles" : "Uncle Tee's Pitch"}
-                    </h1>
-                    {activeSilo === 'garage' && (
-                      <p className="text-indigo-600 text-xs md:text-sm font-black uppercase tracking-[0.3em] italic">"The future begins here"</p>
-                    )}
-                    <div className="flex items-center gap-3">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                      <p className="text-slate-500 text-[10px] uppercase font-black tracking-[0.2em]">
-                        { (activeSilo === 'wardrobe' ? apparelList : activeSilo === 'garage' ? autoList : jerseyList).length > 0 
-                          ? `${activeCategory === 'all' ? 'All' : activeCategory} Inventory • ${activeSilo.toUpperCase()} NODE`
-                          : "Awaiting Inventory Upload • System Ready"
-                        }
-                      </p>
+
+                  {/* View Mode Controls */}
+                  <div className="flex items-center justify-between md:justify-end gap-4">
+                    <div className="flex border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm h-10 w-fit text-slate-500">
+                      <button className="px-4 border-r border-slate-200 bg-slate-50" title="Grid View"><LayoutGrid className="w-4 h-4" /></button>
+                      <button className="px-4" title="List View"><ListIcon className="w-4 h-4" /></button>
                     </div>
                   </div>
                 </div>
-                    {activeSilo === 'wardrobe' && (
-                      <div className="space-y-4 mb-6">
-                        {/* Wardrobe Real Product Search Bar */}
-                        <div className="relative max-w-xl">
-                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                          <input 
-                            type="text"
-                            value={wardrobeSearchQuery}
-                            onChange={(e) => setWardrobeSearchQuery(e.target.value)}
-                            placeholder="Search wardrobe by item, brand, Rolex, AP, Nike, style..."
-                            className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-xs md:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all shadow-sm"
-                          />
-                          {wardrobeSearchQuery && (
-                            <button 
-                              onClick={() => setWardrobeSearchQuery('')}
-                              className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
-                              title="Clear search"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
 
-                        {/* Category Filter Pills */}
-                        <div className="smooth-scroll-x py-2 gap-3 border-b border-slate-100 flex overflow-x-auto w-full max-w-full">
-                          {[
-                            { id: 'all', label: 'All Essentials' },
-                            { id: CategoryType.FABRICS, label: 'Fabrics' },
-                            { id: CategoryType.APPAREL, label: 'Apparel' },
-                            { id: CategoryType.FOOTWEAR, label: 'Footwear' },
-                            { id: CategoryType.ACCESSORIES, label: 'Accessories' },
-                            { id: CategoryType.SEWING_SERVICES, label: 'Sewing' },
-                          ].map((cat) => (
-                            <button
-                              key={cat.id}
-                              onClick={() => setActiveCategory(cat.id as any)}
-                              className={cn(
-                                "whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm",
-                                activeCategory === cat.id 
-                                  ? "bg-slate-900 text-white border-slate-900 shadow-indigo-100" 
-                                  : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
-                              )}
-                            >
-                              {cat.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm h-10 w-fit text-slate-500">
-                        <button className="px-4 border-r border-slate-200 bg-slate-50"><LayoutGrid className="w-4 h-4" /></button>
-                        <button className="px-4"><ListIcon className="w-4 h-4" /></button>
-                      </div>
+                {/* Wardrobe Silo: Dedicated Search Bar and Category Navigation */}
+                {activeSilo === 'wardrobe' && (
+                  <div className="space-y-4 mb-8">
+                    {/* Wardrobe Real Product Search Bar */}
+                    <div className="relative w-full max-w-xl">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input 
+                        type="text"
+                        value={wardrobeSearchQuery}
+                        onChange={(e) => setWardrobeSearchQuery(e.target.value)}
+                        placeholder="Search wardrobe by item, brand, Rolex, AP, Nike, style..."
+                        className="w-full pl-11 pr-10 py-3.5 bg-white border border-slate-200 rounded-2xl text-xs md:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all shadow-sm"
+                      />
+                      {wardrobeSearchQuery && (
+                        <button 
+                          onClick={() => setWardrobeSearchQuery('')}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
+                          title="Clear search"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Category Filter Pills */}
+                    <div className="smooth-scroll-x py-2 gap-3 border-b border-slate-100 flex overflow-x-auto w-full max-w-full">
+                      {[
+                        { id: 'all', label: 'All Essentials' },
+                        { id: CategoryType.FABRICS, label: 'Fabrics' },
+                        { id: CategoryType.APPAREL, label: 'Apparel' },
+                        { id: CategoryType.FOOTWEAR, label: 'Footwear' },
+                        { id: CategoryType.ACCESSORIES, label: 'Accessories' },
+                        { id: CategoryType.SEWING_SERVICES, label: 'Sewing' },
+                      ].map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => setActiveCategory(cat.id as any)}
+                          className={cn(
+                            "whitespace-nowrap px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm",
+                            activeCategory === cat.id 
+                              ? "bg-slate-900 text-white border-slate-900 shadow-indigo-100" 
+                              : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
+                          )}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
+                )}
 
                 <div className={cn("grid grid-cols-1 gap-8 pb-20", !isJerseySilo && activeSilo !== 'garage' && "lg:grid-cols-2")}>
                   {isJerseySilo ? (
