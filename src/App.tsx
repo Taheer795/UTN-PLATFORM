@@ -1068,6 +1068,18 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans w-full max-w-full overflow-x-hidden">
+      {/* UNMISTAKABLE BUILD VERSION MARKER */}
+      <div 
+        id="build-test-marker" 
+        className="bg-amber-400 text-black px-4 py-2 text-center text-xs md:text-sm font-black uppercase tracking-widest border-b border-black z-[150] sticky top-0 flex items-center justify-center gap-2 shadow-sm select-none"
+      >
+        <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse inline-block" />
+        <span>BUILD TEST — AUG 24 2026</span>
+      </div>
+      <div className="fixed bottom-4 left-4 z-[9999] bg-black text-amber-300 font-mono text-[11px] font-bold px-3 py-1.5 rounded-full border border-amber-400/50 shadow-2xl pointer-events-none">
+        BUILD TEST — AUG 24 2026
+      </div>
+
       <SplashScreen isLoading={showSplash} />
       <Navigation 
         currentView={currentView} 
