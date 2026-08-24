@@ -1457,7 +1457,7 @@ export default function App() {
 
                 {/* Wardrobe Silo: Dedicated Search Bar and Category Navigation */}
                 {activeSilo === 'wardrobe' && (
-                  <div className="space-y-4 mb-8">
+                  <div id="wardrobe-search-debug-wrapper" className="space-y-4 mb-8 p-3 rounded-2xl border-2 border-indigo-500 bg-indigo-50/20 min-h-[60px]">
                     {/* Wardrobe Real Product Search Bar */}
                     <div className="relative w-full max-w-xl">
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
