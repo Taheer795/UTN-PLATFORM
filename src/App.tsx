@@ -273,10 +273,8 @@ export default function App() {
     }
   }, [isBrowserOnline, isFirestoreSynced, wasOffline]);
 
-  // Listen for garage scans (Admin sees ALL scans, user sees their own)
+  // Listen for garage scans (Admin sees ALL scans, user sees their own, public sees latest)
   useEffect(() => {
-    if (!authReady) return;
-
     let q;
     if (isAdminUser) {
       q = query(collection(db, 'garage_scans'));
@@ -306,15 +304,25 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'garage_scans');
     });
     return () => unsubscribe();
-  }, [user, isAdminUser, authReady]);
+  }, [user, isAdminUser]);
 
+  // Splash Screen Lifecycle:
+  // 1. Hard unconditional failsafe: Never block store on Firebase Auth / Safari delays. Always hide splash within 1.8s max.
   useEffect(() => {
-    // Hide splash screen after auth is ready and a small delay for smooth transition
+    const failsafeTimer = setTimeout(() => {
+      setShowSplash(false);
+    }, 1800);
+    return () => clearTimeout(failsafeTimer);
+  }, []);
+
+  // 2. Early dismissal if auth finishes quickly
+  useEffect(() => {
     if (authReady) {
       const timer = setTimeout(() => setShowSplash(false), 800);
       return () => clearTimeout(timer);
     }
   }, [authReady]);
+
   const [showSocialFunnel, setShowSocialFunnel] = useState(false);
   const [cart, setCart] = useState<any[]>([]);
   const [activeFilter, setActiveFilter] = useState<'all' | 'new' | 'premium'>('all');
@@ -324,42 +332,59 @@ export default function App() {
   const [garageSearchQuery, setGarageSearchQuery] = useState('');
   const [wardrobeSearchQuery, setWardrobeSearchQuery] = useState('');
 
+  // Firebase Auth background initialization
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      setUser(u);
-      setAuthReady(true);
-      if (u) {
-        // Fetch user document from Firestore 'users' collection to set userRole
-        const userRef = doc(db, 'users', u.uid);
-        try {
-          const userSnap = await getDoc(userRef);
-          let fetchedRole = 'user';
-          if (userSnap.exists()) {
-            fetchedRole = userSnap.data()?.role || 'user';
-          } else if (u.email?.toLowerCase() === ADMIN_EMAIL) {
-            fetchedRole = 'admin';
-          }
-          setUserRole(fetchedRole);
+    let isMounted = true;
+    const unsubscribe = onAuthStateChanged(
+      auth, 
+      async (u) => {
+        if (!isMounted) return;
+        setUser(u);
+        setAuthReady(true);
+        if (u) {
+          // Fetch user document from Firestore 'users' collection to set userRole
+          const userRef = doc(db, 'users', u.uid);
+          try {
+            const userSnap = await getDoc(userRef);
+            if (!isMounted) return;
+            let fetchedRole = 'user';
+            if (userSnap.exists()) {
+              fetchedRole = userSnap.data()?.role || 'user';
+            } else if (u.email?.toLowerCase() === ADMIN_EMAIL) {
+              fetchedRole = 'admin';
+            }
+            setUserRole(fetchedRole);
 
-          // Update user profile document in Firestore while preserving existing fields like 'role'
-          await setDoc(userRef, {
-            uid: u.uid,
-            email: u.email,
-            displayName: u.displayName,
-            photoURL: u.photoURL,
-            lastActiveAt: new Date().toISOString(),
-            ...(userSnap.exists() ? {} : { createdAt: serverTimestamp(), role: fetchedRole })
-          }, { merge: true });
-        } catch (error) {
-          console.warn("Could not fetch user role from Firestore:", error);
-          const fallbackRole = u.email?.toLowerCase() === ADMIN_EMAIL ? 'admin' : 'user';
-          setUserRole(fallbackRole);
+            // Update user profile document in Firestore while preserving existing fields like 'role'
+            await setDoc(userRef, {
+              uid: u.uid,
+              email: u.email,
+              displayName: u.displayName,
+              photoURL: u.photoURL,
+              lastActiveAt: new Date().toISOString(),
+              ...(userSnap.exists() ? {} : { createdAt: serverTimestamp(), role: fetchedRole })
+            }, { merge: true });
+          } catch (error) {
+            console.warn("Could not fetch user role from Firestore:", error);
+            if (!isMounted) return;
+            const fallbackRole = u.email?.toLowerCase() === ADMIN_EMAIL ? 'admin' : 'user';
+            setUserRole(fallbackRole);
+          }
+        } else {
+          setUserRole(null);
         }
-      } else {
-        setUserRole(null);
+      },
+      (error) => {
+        console.warn("Firebase onAuthStateChanged error (handled safely):", error);
+        if (isMounted) {
+          setAuthReady(true);
+        }
       }
-    });
-    return () => unsubscribe();
+    );
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   // Real-time listener for changes in user role in Firestore
@@ -403,10 +428,8 @@ export default function App() {
     }
   }, [authReady, isAdminUser, currentView, userRole]);
 
-  // Real-time Listings
+  // Real-time Listings - Available immediately for public viewing without blocking on auth
   useEffect(() => {
-    if (!authReady) return;
-
     // Listen to the base listings collection directly to avoid complex multi-field 'or' query constraints inside the sandbox iframe (which require non-existent composite indexes)
     const q = query(collection(db, 'listings'));
 
@@ -453,7 +476,7 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'listings');
     });
     return () => unsubscribe();
-  }, [user, authReady, deletedAssetIds]);
+  }, [user, deletedAssetIds]);
 
   // Real-time Requests (Cart)
   useEffect(() => {
